@@ -4,8 +4,8 @@ import json
 import os
 
 #
-# Name:
-# Who did you work with:
+# Name: Cooper Drobnich
+# Who did you work with: Adam Brenner
 #
 
 def readDataFromFile(filename):
@@ -27,6 +27,7 @@ def setUpCategoriesTable(data, cur, conn):
     for business in data['businesses']:
         business_categories = business['categories']
         for category in business_categories:
+            print(category['title'])
             if category['title'] not in category_list:
                 category_list.append(category['title'])
 
@@ -37,6 +38,12 @@ def setUpCategoriesTable(data, cur, conn):
     conn.commit()
 
 def setUpRestaurantTable(data, cur, conn):
+    restaurant_list = []
+    
+    
+    cur.execute("DROP TABLE IF EXISTS Restaurants")
+    cur.execute("CREATE TABLE Restaurants (id INTEGER PRIMARY KEY, title TEXT)")
+
     ## [TASK 1]: 25 points
     # Finish the function setUpRestaurantTable
     # Iterate through the JSON data to get a list of restaurants
@@ -95,7 +102,7 @@ def getRestaurantsOfType(price, rating, category, cur, conn):
     # greater than or equal to that rating, and match that category.
     pass
 
-
+'''
 
 class TestAllMethods(unittest.TestCase):
     def setUp(self):
@@ -183,7 +190,7 @@ class TestAllMethods(unittest.TestCase):
         ## Add your own stests below. Do not change anything about the above tests
         # Write at least 3 assert statements.
 
-
+'''
 def main():
     json_data = readDataFromFile('yelp_data.txt')
     cur, conn = setUpDatabase('restaurants.db')
