@@ -27,7 +27,6 @@ def setUpCategoriesTable(data, cur, conn):
     for business in data['businesses']:
         business_categories = business['categories']
         for category in business_categories:
-            print(category['title'])
             if category['title'] not in category_list:
                 category_list.append(category['title'])
 
@@ -39,7 +38,16 @@ def setUpCategoriesTable(data, cur, conn):
 
 def setUpRestaurantTable(data, cur, conn):
     restaurant_list = []
-    
+    count = 1
+    for i in data['businesses']:
+        restaurant_id = i['id']
+        name = i['name']
+        address = i['location']['address1']
+        zip_code = i['location']['zip_code']
+        print(zip_code)
+        category_id = count
+       
+
     
     cur.execute("DROP TABLE IF EXISTS Restaurants")
     cur.execute("CREATE TABLE Restaurants (id INTEGER PRIMARY KEY, title TEXT)")
