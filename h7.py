@@ -37,20 +37,29 @@ def setUpCategoriesTable(data, cur, conn):
     conn.commit()
 
 def setUpRestaurantTable(data, cur, conn):
-    restaurant_list = []
-    count = 1
+    cur.execute('DROP TABLE IF EXISTS Restaurants')
+    cur.execute('''CREATE TABLE "Restaurants"("restaurant_id" TEXT PRIMARY KEY, name TEXT, "zip_code" TEXT, "address" TEXT, "category_id" INTEGER, 'rating' REAL, "review_count" INTEGER, price TEXT)''')
     for i in data['businesses']:
         restaurant_id = i['id']
         name = i['name']
         address = i['location']['address1']
         zip_code = i['location']['zip_code']
-        print(zip_code)
-        category_id = count
+        rating = i['rating']
+        review_count = i['review_count']
+        cur.execute('SELECT id FROM Categories WHERE title = ?', (i['categories'][0]['title'], ))
+        category_id = cur.fetchone()[0]
+        if 'price' in i:
+            price = i['price']
+        else:
+            price = '$$$$'
+        cur.execute('''INSERT INTO Restaurants (restaurant_id, name, zip_code, address, category_id, rating, review_count, price)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', (restaurant_id, name, zip_code, address, category_id, rating, review_count, price))
+    conn.commit()
+
        
 
     
-    cur.execute("DROP TABLE IF EXISTS Restaurants")
-    cur.execute("CREATE TABLE Restaurants (id INTEGER PRIMARY KEY, title TEXT)")
+    
 
     ## [TASK 1]: 25 points
     # Finish the function setUpRestaurantTable
@@ -64,7 +73,7 @@ def setUpRestaurantTable(data, cur, conn):
     # rating (datatype: real)
     # review_count (datatype: integer)
     # price (datatype: text)
-    pass
+    
 
 
 def getRestaurantsByZip(zip_code, cur, conn):
@@ -74,8 +83,12 @@ def getRestaurantsByZip(zip_code, cur, conn):
     # It selects all the restaurants of a particular zip code 
     # and returns a list of tuples. Each tuple contains 
     # the restaurant name, restaurant address, and restaurant zip code.
-    pass
-
+    zip = []
+    cur.execute(f"SELECT name, address, zip_code FROM Restaurants WHERE zip_code = '{zip_code}' ")
+    rows = cur.fetchall()
+    for i in rows:
+        zip.append(i)
+    return zip
 
 def getRestaurantsByZipcodeAboveRatingAndByPrice(zip_code, rating, price, cur, conn):
     ## [TASK 3]: 10 points
@@ -85,7 +98,12 @@ def getRestaurantsByZipcodeAboveRatingAndByPrice(zip_code, rating, price, cur, c
     # and at ratings bigger than or equal to the rating passed to the function 
     # and of a particular price and returns a list of tuples.
     # Each tuple in the list contains the restaurant name, restaurant address, restaurant rating, and restaurant price.
-    pass
+    zip_and_price = []
+    cur.execute(f"SELECT name, address, rating, price FROM Restaurants WHERE zip_code = '{zip_code}' AND rating >= {rating} AND price = '{price}'")
+    rows = cur.fetchall()
+    for i in rows:
+        zip_and_price.append(i)
+    return zip_and_price
 
 
 
@@ -98,7 +116,16 @@ def getRestaurantsAboveRatingAboveReviewsOfCategory(rating, review_count, catego
     # It returns a list of tuples, each tuple containing the
     # restaurant name, restaurant address, restaurant rating, and restaurant review_count.
     # Note: You have to use JOIN for this task.
-    pass
+    tup_list = []
+    cur.execute('''SELECT Restaurants.name, Restaurants.address, Restaurants.rating, Restaurants.review_count
+    FROM Restaurants JOIN Categories
+    WHERE Restaurants.category_id = Categories.id AND Restaurants.rating >=?
+    AND Restaurants.review_count >= ? AND Categories.title = ?''', (rating, review_count, category))
+    rows = cur.fetchall()
+    for i in rows:
+        tup_list.append(i)
+    return tup_list
+
 
 
 
@@ -108,9 +135,19 @@ def getRestaurantsOfType(price, rating, category, cur, conn):
     # the database cursor, and database connection object. It returns
     # a list of all of the restaurant names that match the price, are
     # greater than or equal to that rating, and match that category.
-    pass
+   extra_list = []
+   cur.execute('''SELECT Restaurants.name
+   FROM Restaurants JOIN Categories
+   WHERE Restaurants.category_id = Categories.id AND Restaurants.price = ?
+   AND Restaurants.rating >= ? AND Categories.title = ?''', (price, rating, category))
+   rows = cur.fetchall()
+   for i in rows:
+       extra_list.append(i)
+   print(extra_list)
+   return extra_list
+    
 
-'''
+
 
 class TestAllMethods(unittest.TestCase):
     def setUp(self):
@@ -194,11 +231,10 @@ class TestAllMethods(unittest.TestCase):
         f = getRestaurantsOfType("$$$$", 3.5, "Chicken Wings", self.cur, self.conn)
         self.assertEqual(len(f), 1)
         self.assertEqual(f[0][0], 'Wings N Things')
-
         ## Add your own stests below. Do not change anything about the above tests
         # Write at least 3 assert statements.
 
-'''
+
 def main():
     json_data = readDataFromFile('yelp_data.txt')
     cur, conn = setUpDatabase('restaurants.db')
